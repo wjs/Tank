@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Tank</string>
+    <string name="newBattleBtn">New Battle</string>
+    <string name="chooseBattleBtn">Choose Battle</string>
+    <string name="exitGameBtn">Exit</string>
+</resources>
