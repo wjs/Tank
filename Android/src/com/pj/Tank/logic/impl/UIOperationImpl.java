@@ -1,5 +1,6 @@
 package com.pj.Tank.logic.impl;
 
+import android.util.Log;
 import com.pj.Tank.entity.NetPackage;
 import com.pj.Tank.entity.Obstacle;
 import com.pj.Tank.entity.Point;
@@ -23,11 +24,13 @@ public class UIOperationImpl implements UIOperation {
 
 	@Override
 	public void tankMove(float power, float wheelSpeed, boolean isShooting) {
+		wheelSpeed *= 500;
+
 		// ---------------------------------------------------------------------------------
 		// 1、explodingPoints字段和所有坦克的isShooting和isShooted字段重置
 		// ---------------------------------------------------------------------------------
 		GlobalEnvironment.explodingPoints.clear();
-		GlobalEnvironment.infoMessages.clear();;
+		GlobalEnvironment.infoMessages.clear();
 		Set<Integer> tankKeySet = GlobalEnvironment.tanks.keySet();
 		Iterator<Integer> tankKeySetIterator = tankKeySet.iterator();
 		while (tankKeySetIterator.hasNext()) {
@@ -45,7 +48,7 @@ public class UIOperationImpl implements UIOperation {
 		// ---------------------------------------------------------------------------------
 		// 2、利用网络模块收包并进行处理
 		// ---------------------------------------------------------------------------------
-		receiveNetPackage(t);
+//		receiveNetPackage(t);
 
 		// ---------------------------------------------------------------------------------
 		// 3、计算己方坦克的各项参数
@@ -53,8 +56,10 @@ public class UIOperationImpl implements UIOperation {
 		Tank myTank = GlobalEnvironment.tanks.get(GlobalEnvironment.selfTankId);
 		pureMove(myTank, t, power, wheelSpeed);
 		// （7）如果自己的坦克开炮 --------------------------------
-		shooting(myTank);
-
+		if (isShooting) {
+			shooting(myTank);
+		}
+//		Log.v("myLog3", myTank.getWheelSpeed() + "");
 
 		// ---------------------------------------------------------------------------------
 		// 4、检查己方坦克的被命中情况
@@ -70,11 +75,13 @@ public class UIOperationImpl implements UIOperation {
 		// ---------------------------------------------------------------------------------
 		// 5、利用网络模块发包
 		// ---------------------------------------------------------------------------------
-		NetPackage np = new NetPackage();
-		np.setNetTank(myTank);
-		np.setNetBeShooted(GlobalEnvironment.tanks.get(GlobalEnvironment.otherTankId).getBeShooted());
-		np.setNetExplodingPoints(GlobalEnvironment.explodingPoints);
-
+		Tank otherTank = GlobalEnvironment.tanks.get(GlobalEnvironment.otherTankId);
+		if (otherTank != null) {
+			NetPackage np = new NetPackage();
+			np.setNetTank(myTank);
+			np.setNetBeShooted(otherTank.getBeShooted());
+			np.setNetExplodingPoints(GlobalEnvironment.explodingPoints);
+		}
 	}
 
 	/**
@@ -87,65 +94,120 @@ public class UIOperationImpl implements UIOperation {
 	private void pureMove(Tank myTank, int t, float power, float wheelSpeed) {
 		// （2）理论计算的位移 -------------------------------------
 		float s = myTank.getRunSpeed() * t;	// 理论位移
-		float angle = myTank.getHeadDirection() + myTank.getWheelSpeed() * t;	// 理论当前朝向
-		int tmpX = (int) (myTank.getX() + s * Math.cos(angle));
-		int tmpY = (int) (myTank.getY() + s * Math.sin(angle));
+		float angle;
+		if(power != 0)
+			angle = myTank.getHeadDirection() + myTank.getWheelSpeed() * t;	// 理论当前朝向
+		else
+			angle = myTank.getHeadDirection();	// 理论当前朝向
+		angle = (angle + 720) % 360;	// 保证在 0-360之间
+		int tmpX = (int) Math.round(myTank.getX() + s * Math.cos(2*Math.PI/360 * angle));
+		int tmpY = (int) Math.round(myTank.getY() + s * (Math.sin(2*Math.PI/360 * angle)));
+		if (tmpX < 0) {
+			tmpX = 0;
+		}
+		if (tmpX >= GlobalEnvironment.GAMEMAPE_WIDTH) {
+			tmpX = GlobalEnvironment.GAMEMAPE_WIDTH - 1;
+		}
+		if (tmpY < 0) {
+			tmpY = 0;
+		}
+		if (tmpY >= GlobalEnvironment.GAMEMAPE_HEIGHT) {
+			tmpY = GlobalEnvironment.GAMEMAPE_HEIGHT - 1;
+		}
+//		Log.v("myLog2", "speed=" + myTank.getRunSpeed() + ", t=" + t + ", s=" + s + ", angle=" + -Math.sin(2*Math.PI/360 * angle) + ", tmpX=" + tmpX + ", tmpY=" + tmpY + " -----------");
 
 		// （3）直线速度 -------------------------------------------
-		if (myTank.getRunAcceleration() == 0 && myTank.getRunSpeed() != 0) {
-			myTank.setRunSpeed(myTank.getRunSpeed() * GlobalEnvironment.runSpeedFadingRate);
-		} else {
-			myTank.setRunSpeed(myTank.getRunSpeed() + myTank.getRunAcceleration() * t);
-		}
+		myTank.setRunSpeed(myTank.getRunSpeed() + myTank.getRunAcceleration() * t);
+		Log.v("myLog2", "v=" + myTank.getRunSpeed() + ", a=" + myTank.getRunAcceleration() + ", t=" + t);
+//		myTank.setRunSpeed(0.09f);
 
 		//（4） 坦克朝向 ------------------------------------------
 		myTank.setHeadDirection(angle);
 
 		// （5）刷新角速度和直线加速度 ----------------------------
 		myTank.setWheelSpeed(wheelSpeed);
-		myTank.setRunAcceleration((power - GlobalEnvironment.gameMap.getFriction() * myTank.getRunSpeed()) / myTank.getM());
+		if (power != 0) {
+			myTank.setRunAcceleration((power - GlobalEnvironment.gameMap.getFriction() * myTank.getRunSpeed()) / myTank.getM());
+//			Log.v("myLog2", power+", " + myTank.getRunAcceleration() + ", " + GlobalEnvironment.gameMap.getFriction() + ", " + myTank.getRunSpeed());
+		}
 
 		// （6）进行碰撞判断 --------------------------------------
 		// 先获得位移起点终点的slotId
-		Point start = new Point(myTank.getX(), myTank.getY());
+		Point start = new Point((int)myTank.getX(), (int)myTank.getY());
 		Point end = new Point(tmpX, tmpY);
 		int[] startPointSlotId = getSlotIdByPoint(start);
 		int[] endPointSlotId = getSlotIdByPoint(end);
 		// 如果终点落在某个obstacle里面的话
 		if (!isSafePoint(new Point(tmpX, tmpY), endPointSlotId)) {
 			ArrayList<Point[]> crossPoints = getCrossPointListBySlotIds(start, end, startPointSlotId, endPointSlotId);
+			for (int i = 0; i < crossPoints.size(); i++) {
+				Log.v("Collision", crossPoints.get(i)[0].toString()+" ------- " + crossPoints.size());
+			}
 			// 如果有多个交叉点，再确定最近的那个点precise_collision
 			Point[] precise_collision = null;
 			if (crossPoints.size() == 1) {
+//				Log.v("myLog3", tmpX + ", " + tmpY + "##########");
 				precise_collision = crossPoints.get(0);
 			} else if (crossPoints.size() > 1) {
+				Log.v("Collision", "miaomiaowuwu");
 				precise_collision = getClosePoint(start, crossPoints);
 			}
 			// 修改坦克的位置，朝向,速度投影，垂直或水平撞的不用变朝向
+			Log.v("Collision",String.format("%d %d %f %f",tmpX,tmpY,myTank.getX(),myTank.getY()));
 			if (precise_collision != null && precise_collision.length == 3) {
 				// 速度投影
-				myTank.setRunSpeed((int) (myTank.getRunSpeed() * Math.abs(Math.cos(myTank.getHeadDirection()))));
+//				myTank.setRunSpeed((int) Math.round(myTank.getRunSpeed() * Math.abs(Math.cos(myTank.getHeadDirection()))));
+//				Log.v("myLog2", "speed projection = " + myTank.getRunSpeed());
 				// 位置
 				myTank.setX(precise_collision[1].getX());
 				myTank.setY(precise_collision[1].getY());
 				// 朝向
-				if (precise_collision[0].getX() < precise_collision[2].getX()) {
-					myTank.setHeadDirection(0);
-				} else if (precise_collision[0].getX() > precise_collision[2].getX()) {
-					myTank.setHeadDirection(180);
-				} else if (precise_collision[0].getY() < precise_collision[2].getY()) {
-					myTank.setHeadDirection(270);
-				} else if (precise_collision[0].getY() > precise_collision[2].getY()) {
-					myTank.setHeadDirection(90);
-				}
+				myTank.setHeadDirection(360-myTank.getHeadDirection());
+//				if (precise_collision[0].getX() < precise_collision[2].getX()) {
+//					myTank.setHeadDirection(0);
+//				} else if (precise_collision[0].getX() > precise_collision[2].getX()) {
+//					myTank.setHeadDirection(180);
+//				} else if (precise_collision[0].getY() < precise_collision[2].getY()) {
+//					myTank.setHeadDirection(270);
+//				} else if (precise_collision[0].getY() > precise_collision[2].getY()) {
+//					myTank.setHeadDirection(90);
+//				}
 			} else if (precise_collision != null && precise_collision.length == 1) {
 				// 速度变为0
 				myTank.setRunSpeed(0);
 				// 位置
-				myTank.setX(precise_collision[0].getX());
-				myTank.setY(precise_collision[0].getY());
+				switch ((int) Math.round(myTank.getHeadDirection())) {
+					case 0: {
+						myTank.setX(precise_collision[0].getX() - 1);
+						myTank.setY(precise_collision[0].getY());
+						break;
+					}
+					case 90: {
+						myTank.setX(precise_collision[0].getX());
+						myTank.setY(precise_collision[0].getY() + 1);
+						break;
+					}
+					case 180: {
+						myTank.setX(precise_collision[0].getX() + 1);
+						myTank.setY(precise_collision[0].getY());
+						break;
+					}
+					default: {
+						myTank.setX(precise_collision[0].getX());
+						myTank.setY(precise_collision[0].getY() - 1);
+						break;
+					}
+				}
+
 			}
+		} else {
+//			myTank.setRunSpeed((float)0.2);
+
+			// 终点没有落在 obstacle 里面
+			myTank.setX(tmpX);
+			myTank.setY(tmpY);
 		}
+		Log.v("myLog3", "speed=" + myTank.getRunSpeed() + ", a=" + myTank.getRunAcceleration() + ", power=" + power + ", wheelSpeed=" + myTank.getWheelSpeed() + ", head=" + myTank.getHeadDirection() + ", x=" + myTank.getX() + ", y=" + myTank.getY());
 	}
 
 	/**
@@ -155,6 +217,7 @@ public class UIOperationImpl implements UIOperation {
 	 */
 	private int[] getSlotIdByPoint(Point p) {
 		int[] slotId = new int[2];
+//		Log.v("myLog", p.toString());
 		slotId[0] = (int) (p.getX() / GlobalEnvironment.HORIZONTAL_SLOT_SIZE);
 		slotId[1] = (int) (p.getY() / GlobalEnvironment.VERTICAL_SLOT_SIZE);
 		return slotId;
@@ -168,11 +231,14 @@ public class UIOperationImpl implements UIOperation {
 	 */
 	private boolean isSafePoint(Point endPoint, int[] endPointSlotId) {
 		int x1, x2, y1, y2;
+//		Log.v("myLog3", endPoint.getY() + ", slotid=" + intArray2String(endPointSlotId));
 		for (Obstacle o : GlobalEnvironment.slot_table.get(intArray2String(endPointSlotId))) {
+
 			x1 = (int) o.getTopLeft().getX();
 			y1 = (int) o.getTopLeft().getY();
 			x2 = (int) o.getBottomRight().getX();
 			y2 = (int) o.getBottomRight().getY();
+//			Log.v("myLog3", x1 + ", " + x2 + " ,     " + y1 + ", " + y2 + " -----------------"  + endPoint.getX() + ", "+ endPoint.getY());
 			if (endPoint.getX() >= x1 && endPoint.getX() <= x2 && endPoint.getY() >= y1 && endPoint.getY() <= y2) {
 				return false;
 			}
@@ -191,32 +257,51 @@ public class UIOperationImpl implements UIOperation {
 	private ArrayList<Point[]> getCrossPointListBySlotIds(Point start, Point end, int[] startPointSlotId, int[] endPointSlotId) {
 		ArrayList<Point[]> crossPoints = new ArrayList<Point[]>();
 		ArrayList<Obstacle> tmpObstacleList = GlobalEnvironment.slot_table.get(intArray2String(endPointSlotId));
+
 		// 如果 start 和 end 在不同的 slot 里面
 		if (!(startPointSlotId[0] == endPointSlotId[0] && startPointSlotId[1] == endPointSlotId[1])) {
 			tmpObstacleList.addAll(GlobalEnvironment.slot_table.get(intArray2String(startPointSlotId)));
 		}
+		int x1, y1, x2, y2;
 		for (Obstacle o : tmpObstacleList) {
+			x1 = (int) o.getTopLeft().getX();
+			x2 = (int) o.getBottomRight().getX();
+			y1 = (int) o.getTopLeft().getY();
+			y2 = (int) o.getBottomRight().getY();
 			// 位移的线如果是水平或者垂直的时候，就是没有斜率或者斜率为0时,此时往 crossPoints 里面塞的 Point[] 长度是1，就是那个交点而已
 			if (start.getX() == end.getX()) {
 				Point[] cp = new Point[1];
 				// 如果从上往下走
 				if (start.getY() < end.getY()) {
-					cp[0] = new Point(start.getX(), o.getTopLeft().getY());
+					if (start.getY() < y1 && end.getY() > y1 && start.getX() > x1 && start.getX() < x2) {
+						cp[0] = new Point(start.getX(), o.getTopLeft().getY());
+						crossPoints.add(cp);
+						Log.v("myLog4", o.getTopLeft().getX() + ", " + o.getTopLeft().getY() + ",   " + o.getTopRight().getX() + "," + o.getTopRight().getY());
+					}
 				} else {
 					// 如果从下往上走
 					cp[0] = new Point(start.getX(), o.getBottomLeft().getY());
+					if (start.getY() > y2 && end.getY() < y2 && start.getX() > x1 && start.getX() < x2) {
+						cp[0] = new Point(start.getX(), o.getTopLeft().getY());
+						crossPoints.add(cp);
+					}
 				}
-				crossPoints.add(cp);
+
 			} else if (start.getY() == end.getY()) {
 				Point[] cp = new Point[1];
 				// 如果从左往右走
 				if (start.getX() < end.getX()) {
-					cp[0] = new Point(o.getTopLeft().getX(), start.getY());
+					if (start.getX() < x1 && end.getX() > x1 && start.getY() > y1 && start.getY() < y2) {
+						cp[0] = new Point(o.getTopLeft().getX(), start.getY());
+						crossPoints.add(cp);
+					}
 				} else {
 					// 如果从右往左走
-					cp[0] = new Point(o.getTopRight().getX(), start.getY());
+					if (start.getX() > x2 && end.getX() < x2 && start.getY() > y1 && start.getY() < y2) {
+						cp[0] = new Point(o.getTopRight().getX(), start.getY());
+						crossPoints.add(cp);
+					}
 				}
-				crossPoints.add(cp);
 			} else {
 				// 存在斜率的情况，此时往 crossPoints 里面塞的 Point[] 长度是3，另外两个是所交的边的两个端点
 				Point[] cp1 = getCrossPoint(start, end, o.getTopLeft(), o.getTopRight());
@@ -249,15 +334,28 @@ public class UIOperationImpl implements UIOperation {
 	 * @return
 	 */
 	private Point[] getCrossPoint(Point start, Point end, Point p1, Point p2) {
-		double k = (start.getY() - end.getY()) / (start.getX() - end.getX());
+		// 直线公式 -y = k*x + b
+		double k = - ((double) start.getY() - end.getY()) / (start.getX() - end.getX());
+		double b = - (start.getY() + k * start.getX());
 		int x1 = (int) p1.getX();
 		int y1 = (int) p1.getY();
 		int x2 = (int) p2.getX();
 		int y2 = (int) p2.getY();
 		// obstacle的水平的边
 		if (y1 == y2) {
-			int cx = (int) (y1 / k);
-			if (cx > x1 && cx < x2) {
+			int leftXofS , rightXofS ;
+			if( start.getX() > end.getX() )
+			{
+				leftXofS = (int) end.getX() ;
+				rightXofS = (int) start.getX() ;
+			}
+			else
+			{
+				leftXofS = (int) start.getX() ;
+				rightXofS = (int) end.getX() ;
+			}
+			int cx = - (int) Math.round((y1 + b) / k);
+			if (cx >= x1 && cx <= x2 && cx >= leftXofS && cx <= rightXofS ) {
 				Point[] ps = new Point[3];
 				ps[1] = new Point(cx, y1);
 				if (start.getX() < end.getX()) {
@@ -272,8 +370,19 @@ public class UIOperationImpl implements UIOperation {
 		}
 		// obstacle的竖直的边
 		if (x1 == x2) {
-			int cy = (int) (x1 * k);
-			if (cy > y1 && cy < y2) {
+			int topYofS , bottomYofS ;
+			if( start.getY() > end.getY() )
+			{
+				topYofS = (int) end.getY() ;
+				bottomYofS = (int) start.getY() ;
+			}
+			else
+			{
+				topYofS = (int) start.getY() ;
+				bottomYofS = (int) end.getY() ;
+			}
+			int cy = - (int) Math.round(x1 * k + b);
+			if (cy > y1 && cy < y2 && cy > topYofS && cy < bottomYofS ) {
 				Point[] ps = new Point[3];
 				ps[1] = new Point(x1, cy);
 				if (start.getY() < end.getY()) {
@@ -297,15 +406,41 @@ public class UIOperationImpl implements UIOperation {
 	 */
 	private Point[] getClosePoint(Point start, ArrayList<Point[]> crossPoints) {
 		Point[] precise_collision = crossPoints.get(0);
-		int minLength = (int) Math.abs(start.getX() - precise_collision[1].getX());
-		for (int i = 1; i < crossPoints.size(); i++) {
-			// 此时的pp长度应该是3，里面是有三个点的，因为垂直或水平撞的时候不可能有多个交叉点
-			int tmpLength = (int) Math.abs(start.getX() - crossPoints.get(i)[1].getX());
-			if (tmpLength < minLength) {
-				minLength = tmpLength;
-				precise_collision = crossPoints.get(i);
+		if (precise_collision.length == 1) {
+			boolean useX = true;
+			int minLength = (int) Math.abs(start.getX() - precise_collision[0].getX());
+			if (minLength == 0) {
+				minLength = (int) Math.abs(start.getY() - precise_collision[0].getY());
+				useX = false;
+			}
+			for (int i = 1; i < crossPoints.size(); i++) {
+				if (useX) {
+					int tmpLength = (int) Math.abs(start.getX() - crossPoints.get(i)[0].getX());
+					if (tmpLength < minLength) {
+						minLength = tmpLength;
+						precise_collision = crossPoints.get(i);
+					}
+				} else {
+					int tmpLength = (int) Math.abs(start.getY() - crossPoints.get(i)[0].getY());
+					if (tmpLength < minLength) {
+						minLength = tmpLength;
+						precise_collision = crossPoints.get(i);
+					}
+				}
+
+			}
+		} else if (precise_collision.length == 3) {
+			int minLength = (int) Math.abs(start.getX() - precise_collision[1].getX());
+			for (int i = 1; i < crossPoints.size(); i++) {
+				// 此时的pp长度应该是3，里面是有三个点的，因为垂直或水平撞的时候不可能有多个交叉点
+				int tmpLength = (int) Math.abs(start.getX() - crossPoints.get(i)[1].getX());
+				if (tmpLength < minLength) {
+					minLength = tmpLength;
+					precise_collision = crossPoints.get(i);
+				}
 			}
 		}
+
 		return precise_collision;
 	}
 
@@ -337,7 +472,7 @@ public class UIOperationImpl implements UIOperation {
 				} else {
 					// 炮弹有斜率
 					float k = (startPoint.getY() - endPoint.getY()) / (startPoint.getX() - endPoint.getX());
-					int x0 = (int) (curTank.getY() / k);
+					int x0 = (int) ((int) Math.round(curTank.getY() / k) + startPoint.getX());
 					len = Math.abs(curTank.getX() - x0);
 					p = new Point(x0, curTank.getY());
 				}
@@ -414,6 +549,7 @@ public class UIOperationImpl implements UIOperation {
 						}
 					}
 				}
+				obstacleHitPoint.add(endPoint);
 			}
 		}
 
@@ -426,24 +562,35 @@ public class UIOperationImpl implements UIOperation {
 		if (obstacleHitPoint.size() > 0) {
 			nearestObstacleHitPoint = obstacleHitPoint.get(0);
 		}
-		for (int i = 1; i < tankHitPoint.size(); i++) {
-			if (Math.abs(startPoint.getX() - nearestTankHitPoint.getX()) > Math.abs(startPoint.getX() - tankHitPoint.get(i).getX())) {
-				nearestTankHitPoint = tankHitPoint.get(i);
-			}
-		}
+//		for (int i = 1; i < tankHitPoint.size(); i++) {
+//			if (Math.abs(startPoint.getX() - nearestTankHitPoint.getX()) > Math.abs(startPoint.getX() - tankHitPoint.get(i).getX())) {
+//				nearestTankHitPoint = tankHitPoint.get(i);
+//			} else if (Math.abs(startPoint.getY() -nearestTankHitPoint.getY()) > Math.abs(startPoint.getY() - tankHitPoint.get(i).getY())) {
+//				nearestTankHitPoint = tankHitPoint.get(i);
+//			}
+//		}
 		for (int i = 1; i < obstacleHitPoint.size(); i++) {
 			if (Math.abs(startPoint.getX() - nearestObstacleHitPoint.getX()) > Math.abs(startPoint.getX() - obstacleHitPoint.get(i).getX())) {
+				nearestObstacleHitPoint = obstacleHitPoint.get(i);
+			} else if (Math.abs(startPoint.getY() - nearestObstacleHitPoint.getY()) > Math.abs(startPoint.getY() - obstacleHitPoint.get(i).getY())) {
 				nearestObstacleHitPoint = obstacleHitPoint.get(i);
 			}
 		}
 
 		// 在tankHitPoint和obstacleHitPoint各自的第一项中选择最近的弹着点
 		if (nearestObstacleHitPoint != null && nearestTankHitPoint != null) {
-			if(Math.abs(startPoint.getX() - nearestTankHitPoint.getX()) < Math.abs(startPoint.getX() - nearestObstacleHitPoint.getX())) {
+			int lenTank = (int) ((startPoint.getX() - nearestTankHitPoint.getX())*(startPoint.getX() - nearestTankHitPoint.getX()) + (startPoint.getY() - nearestTankHitPoint.getY()) * (startPoint.getY() - nearestTankHitPoint.getY()));
+			int lenObstacle = (int) ((startPoint.getX() - nearestObstacleHitPoint.getX())*(startPoint.getX() - nearestObstacleHitPoint.getX()) + (startPoint.getY() - nearestObstacleHitPoint.getY()) * (startPoint.getY() - nearestObstacleHitPoint.getY()));
+			if (lenObstacle > lenTank) {
 				tankHit.get(nearestTankHitPoint).setBeShooted(GlobalEnvironment.bomb_table.get(myTank.getCurrentBomb()).getDamage());
 			} else {
 				GlobalEnvironment.explodingPoints.add(nearestObstacleHitPoint);
 			}
+//			if(Math.abs(startPoint.getX() - nearestTankHitPoint.getX()) < Math.abs(startPoint.getX() - nearestObstacleHitPoint.getX())) {
+//				tankHit.get(nearestTankHitPoint).setBeShooted(GlobalEnvironment.bomb_table.get(myTank.getCurrentBomb()).getDamage());
+//			} else {
+//				GlobalEnvironment.explodingPoints.add(nearestObstacleHitPoint);
+//			}
 		} else if (nearestObstacleHitPoint != null) {
 			GlobalEnvironment.explodingPoints.add(nearestObstacleHitPoint);
 		} else if (nearestTankHitPoint != null) {
@@ -469,51 +616,51 @@ public class UIOperationImpl implements UIOperation {
 		} else if (angle == 270) {
 			resultPoint = new Point(startPoint.getX(), GlobalEnvironment.GAMEMAPE_HEIGHT);
 		} else {
-			// 直线公式 y = kx + b
-			double k = Math.tan(angle);
-			double b = startPoint.getY() - k * startPoint.getX();
+			// 直线公式 -y = kx + b
+			double k = Math.tan(2 * Math.PI / 360 * angle);
+			double b = - startPoint.getY() - k * startPoint.getX();
 			if (angle > 0 && angle < 90) {
 				// top
-				int tmpX = (int) (- b / k);
-				if (tmpX < GlobalEnvironment.GAMEMAPE_WIDTH) {
+				int tmpX = (int) Math.round(-b / k);
+				if (tmpX >= 0 && tmpX <= GlobalEnvironment.GAMEMAPE_WIDTH) {
 					resultPoint = new Point(tmpX, 0);
 				}
 				// right
-				int tmpY = (int) (k * GlobalEnvironment.GAMEMAPE_WIDTH + b);
-				if (tmpY < GlobalEnvironment.GAMEMAPE_HEIGHT) {
+				int tmpY = - (int) Math.round(k * GlobalEnvironment.GAMEMAPE_WIDTH + b);
+				if (tmpY >= 0 && tmpY <= GlobalEnvironment.GAMEMAPE_HEIGHT) {
 					resultPoint = new Point(GlobalEnvironment.GAMEMAPE_WIDTH, tmpY);
 				}
 			} else if (angle > 90 && angle < 180) {
 				// top
-				int tmpX = (int) (- b / k);
-				if (tmpX < GlobalEnvironment.GAMEMAPE_WIDTH) {
+				int tmpX = (int) Math.round(- b / k);
+				if (tmpX >= 0 && tmpX <= GlobalEnvironment.GAMEMAPE_WIDTH) {
 					resultPoint = new Point(tmpX, 0);
 				}
 				// left
-				int tmpY = (int) (Math.abs(b));
-				if (tmpY < GlobalEnvironment.GAMEMAPE_WIDTH) {
+				int tmpY = (int) Math.round(-b);
+				if (tmpY >= 0 && tmpY <= GlobalEnvironment.GAMEMAPE_WIDTH) {
 					resultPoint = new Point(0, tmpY);
 				}
 			} else if (angle > 180 && angle < 270) {
 				// left
-				int tmpY = (int) (Math.abs(b));
-				if (tmpY < GlobalEnvironment.GAMEMAPE_HEIGHT) {
+				int tmpY = (int) Math.round(-b);
+				if (tmpY >= 0 && tmpY <= GlobalEnvironment.GAMEMAPE_HEIGHT) {
 					resultPoint = new Point(0, tmpY);
 				}
 				// bottom
-				int tmpX = (int) ((GlobalEnvironment.GAMEMAPE_HEIGHT - b) / k);
-				if (tmpX < GlobalEnvironment.GAMEMAPE_WIDTH) {
+				int tmpX = - (int) Math.round((GlobalEnvironment.GAMEMAPE_HEIGHT + b) / k);
+				if (tmpX >= 0 && tmpX <= GlobalEnvironment.GAMEMAPE_WIDTH) {
 					resultPoint = new Point(tmpX, GlobalEnvironment.GAMEMAPE_HEIGHT);
 				}
 			} else {
 				// right
-				int tmpY = (int) (k * GlobalEnvironment.GAMEMAPE_WIDTH + b);
-				if (tmpY < GlobalEnvironment.GAMEMAPE_HEIGHT) {
+				int tmpY = - (int) Math.round(k * GlobalEnvironment.GAMEMAPE_WIDTH + b);
+				if (tmpY >= 0 && tmpY <= GlobalEnvironment.GAMEMAPE_HEIGHT) {
 					resultPoint = new Point(GlobalEnvironment.GAMEMAPE_WIDTH, tmpY);
 				}
 				// bottom
-				int tmpX = (int) ((GlobalEnvironment.GAMEMAPE_HEIGHT - b) / k);
-				if (tmpX < GlobalEnvironment.GAMEMAPE_WIDTH) {
+				int tmpX = - (int) Math.round((GlobalEnvironment.GAMEMAPE_HEIGHT + b) / k);
+				if (tmpX >= 0 && tmpX <= GlobalEnvironment.GAMEMAPE_WIDTH) {
 					resultPoint = new Point(tmpX, GlobalEnvironment.GAMEMAPE_HEIGHT);
 				}
 			}
@@ -539,6 +686,12 @@ public class UIOperationImpl implements UIOperation {
 			}
 		} else {
 			resultList.add(startPointSlotId);
+		}
+		for (int i = 0; i < resultList.size(); i++) {
+			if (resultList.get(i)[0] < 0 || resultList.get(i)[1] < 0) {
+				resultList.remove(i);
+				i--;
+			}
 		}
 		return resultList;
 	}

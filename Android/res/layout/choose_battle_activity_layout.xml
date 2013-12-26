@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+    <TextView android:id="@+id/chooseBattleTankNameTextView"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:text="@string/inputTankNameTextViewString"/>
+    <EditText android:id="@+id/chooseBattleTankNameEditText"
+              android:layout_width="match_parent"
+              android:layout_height="40dp"
+              android:layout_below="@id/chooseBattleTankNameTextView"
+            />
+    <TextView android:id="@+id/inputServerIPTextView"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_below="@id/chooseBattleTankNameEditText"
+              android:text="@string/inputServerIPTextViewString"/>
+    <EditText android:id="@+id/serverIPEditText"
+              android:layout_width="match_parent"
+              android:layout_height="40dp"
+              android:layout_below="@id/inputServerIPTextView"
+            />
+    <Button android:id="@+id/startChooseBattleButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/serverIPEditText"
+            android:layout_marginTop="10dp"
+            android:layout_alignParentRight="true"
+            android:text="@string/startBattleButtonString"
+            />
+</RelativeLayout>

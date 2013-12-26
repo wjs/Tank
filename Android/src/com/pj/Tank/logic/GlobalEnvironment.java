@@ -24,10 +24,9 @@ public class GlobalEnvironment {
 	public static long localTimer;	// @
 	public static int selfTankId;
 	public static int otherTankId;
-	public static float runSpeedFadingRate;
 	public static int GAMEMAPE_WIDTH;	// @
 	public static int GAMEMAPE_HEIGHT;  // @
-	public static final int TANK_RADIUS = 50;	// GameMap2 使用的
+	public static final int TANK_RADIUS = 40;	// GameMap2 使用的
 	public static final int HORIZONTAL_SLOT_NUM = 1;
 	public static final int VERTICAL_SLOT_NUM = 1;
 	public static int HORIZONTAL_SLOT_SIZE; // @

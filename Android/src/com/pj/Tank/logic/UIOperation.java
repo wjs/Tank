@@ -10,5 +10,5 @@ import com.pj.Tank.entity.Point;
  * To change this template use File | Settings | File Templates.
  */
 public interface UIOperation {
-	public void tankMove(float runAcceleration, float wheelSpeed, boolean isShooting);
+	public void tankMove(float power, float wheelSpeed, boolean isShooting);
 }

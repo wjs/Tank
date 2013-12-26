@@ -129,37 +129,37 @@ public class GameRenderer implements com.rs.anergine.GameRenderer {
     @Override
     public void render() {
         float[] gravity = io.getGravity();
-        float v = (float) (gravity[1]/10* Math.PI / 6 /60);
+        float v = (float) (gravity[1]/10* Math.PI / 6 /1000);
 
         //TODO enable this line and start debugging!
-//        uiOperation.tankMove(powerState ? 1000f : -500f, v, fire);
+        uiOperation.tankMove(powerState ? 2f : -0f, v, fire);
 
         Renderer.getInstance().useGameCamera();
 
         //set camera
         //TODO delete this line
-        GlobalEnvironment.selfTankId = GlobalEnvironment.tanks.values().iterator().next().getId();
+//        GlobalEnvironment.selfTankId = GlobalEnvironment.tanks.values().iterator().next().getId();
 
         Tank stank = GlobalEnvironment.tanks.get(GlobalEnvironment.selfTankId);
         if(stank!=null) {
 
             //-----------------------
             //TODO delete these lines
-            stank.setHeadDirection((float) (stank.getHeadDirection() + v*180f/Math.PI));
-            double alpha = Math.toRadians(stank.getHeadDirection());
-            double dx = -Math.cos(alpha)*2, dy = -Math.sin(alpha)*2;
-            if(powerState) {
-                dx = -0.5*dx;
-                dy = -0.5*dy;
-            }
-            stank.setX((float) (stank.getX()+dx));
-            stank.setY((float) (stank.getY()+dy));
-
-            System.out.println("Renderer "+dx +" "+ dy + " "+alpha+ " "+v*180f/Math.PI);
+//            stank.setHeadDirection((float) (stank.getHeadDirection() + v*180f/Math.PI));
+//            double alpha = Math.toRadians(stank.getHeadDirection());
+//            double dx = -Math.cos(alpha)*2, dy = -Math.sin(alpha)*2;
+//            if(powerState) {
+//                dx = -0.5*dx;
+//                dy = -0.5*dy;
+//            }
+//            stank.setX((float) (stank.getX()+dx));
+//            stank.setY((float) (stank.getY()+dy));
+//
+//            System.out.println("Renderer "+dx +" "+ dy + " "+alpha+ " "+v*180f/Math.PI);
             //-----------------------
 
             gameCamera.setTarget(stank.getX(), 100, stank.getY());
-            gameCamera.setAlpha((float) (stank.getHeadDirection() * Math.PI / 180f));
+            gameCamera.setAlpha((float) ((stank.getHeadDirection() + 180) * Math.PI / 180f));
 
             if(stank.getBeShooted()!=0 || fire) { //TODO delete "|| fire"
                 io.vibrate(100);
@@ -213,8 +213,8 @@ public class GameRenderer implements com.rs.anergine.GameRenderer {
         Matrix.setIdentityM(matrixWorld, 0);
 
         Matrix.translateM(matrixWorld, 0, x,0,y);
-        Matrix.scaleM(matrixWorld, 0, GlobalEnvironment.TANK_RADIUS/2,GlobalEnvironment.TANK_RADIUS/2,GlobalEnvironment.TANK_RADIUS/2);
+        Matrix.scaleM(matrixWorld, 0, GlobalEnvironment.TANK_RADIUS,GlobalEnvironment.TANK_RADIUS,GlobalEnvironment.TANK_RADIUS);
         Matrix.translateM(matrixWorld, 0, 0,1,0);
-        Matrix.rotateM(matrixWorld, 0, -tank.getHeadDirection() + 90, 0,1,0); // -90 to adjust model<>game data definition difference.
+        Matrix.rotateM(matrixWorld, 0, -tank.getHeadDirection() - 90, 0,1,0); // -90 to adjust model<>game data definition difference.
     }
 }

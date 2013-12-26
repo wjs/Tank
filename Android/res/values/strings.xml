@@ -4,4 +4,7 @@
     <string name="newBattleBtn">New Battle</string>
     <string name="chooseBattleBtn">Choose Battle</string>
     <string name="exitGameBtn">Exit</string>
+    <string name="inputServerIPTextViewString">Please Input Server IP:</string>
+    <string name="inputTankNameTextViewString">Please Input Your Tank Name:</string>
+    <string name="startBattleButtonString">Start Game</string>
 </resources>
