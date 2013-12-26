@@ -16,7 +16,6 @@ import com.rs.anergine.io.component.Button;
 import com.rs.anergine.io.component.ButtonListener;
 import com.rs.anergine.io.component.ToggleButton;
 import com.rs.anergine.render.Renderer;
-import com.rs.anergine.render.model.ModelCube;
 import com.rs.anergine.render.model.ModelQuad;
 import com.rs.anergine.render.pass.Pass;
 import com.rs.anergine.render.util.ThirdPersonCamera;
@@ -25,11 +24,21 @@ import java.util.ArrayList;
 
 public class GameRenderer implements com.rs.anergine.GameRenderer {
 
+    public static final float[] SHADOW_COLOR = new float[]{0, 0, 0, 0.35f};
+    private static final float l = 1f/ (float) Math.sqrt(3*3+4*4+5*5);
+    public static final float[] lightDirection = new float[] { 3*l,4*l,5*l, 0 };
+    public static float[] matrixShadow = new float[] {
+            lightDirection[1],  0,  0,                  0,
+            -lightDirection[0], 0,  -lightDirection[2], 0,
+            0,                  0,  lightDirection[1],  0,
+            0,                  0,  0,                  lightDirection[1]
+    };
+
     private IO io;
     private ComponentSet cs = new ComponentSet();
     private ThirdPersonCamera gameCamera;
 
-    private ModelCube tankModel;
+    private ModelTank tankModel;
     private ArrayList<ModelBlock> obstacles = new ArrayList<ModelBlock>();
     private ModelQuad terrain;
 
@@ -79,7 +88,7 @@ public class GameRenderer implements com.rs.anergine.GameRenderer {
         Matrix.translateM(matrixWorld, 0, 1, 0, 1);
         Matrix.rotateM(matrixWorld, 0, 90, 1, 0, 0);
 
-        tankModel = new ModelCube(R.drawable.cube_texcoord_explained);
+        tankModel = new ModelTank(R.drawable.cube_texcoord_explained);
 
         ArrayList<Obstacle> obstacles = gameMap.getObstacles();
         for(Obstacle obstacle : obstacles) {
@@ -97,7 +106,7 @@ public class GameRenderer implements com.rs.anergine.GameRenderer {
     public void onChangeSetCamera() {
         Renderer.getInstance().useGameCamera();
         gameCamera = Renderer.getInstance().getCamera();
-        gameCamera.setDistance(500);
+        gameCamera.setDistance(1000);
         gameCamera.setTarget(1000, 0, 1000);
         gameCamera.setUp(0, 1, 0);
         gameCamera.setFovy(45f);
@@ -128,45 +137,66 @@ public class GameRenderer implements com.rs.anergine.GameRenderer {
 
         Renderer.getInstance().useGameCamera();
 
-        for(ModelBlock modelBlock : obstacles)
-            modelBlock.draw(Pass.DRAW);
-
-        terrain.draw(Pass.DRAW);
-
-        for(Tank tank : GlobalEnvironment.tanks.values()) {
-            float[] matrixWorld = tankModel.matrixWorld;
-            Matrix.setIdentityM(matrixWorld, 0);
-            float x = tank.getX(), y = tank.getY();
-
-
-            //TODO delete this line
-            tank.setHeadDirection(tank.getHeadDirection() + 0.1f);
-
-
-            Matrix.translateM(matrixWorld, 0, x,0,y);
-            Matrix.scaleM(matrixWorld, 0, GlobalEnvironment.TANK_RADIUS/2,GlobalEnvironment.TANK_RADIUS/2,GlobalEnvironment.TANK_RADIUS/2);
-            Matrix.translateM(matrixWorld, 0, 0,1,0);
-            Matrix.rotateM(matrixWorld, 0, -tank.getHeadDirection(), 0,1,0);
-
-            tankModel.draw(Pass.DRAW);
-        }
-
+        //set camera
         //TODO delete this line
         GlobalEnvironment.selfTankId = GlobalEnvironment.tanks.values().iterator().next().getId();
 
-        //旋转可能有问题 用上
-        Tank tank = GlobalEnvironment.tanks.get(GlobalEnvironment.selfTankId);
-        if(tank!=null) {
-            gameCamera.setTarget(tank.getX(), GlobalEnvironment.TANK_RADIUS, tank.getY());
-            gameCamera.setAlpha((float) (tank.getHeadDirection() * Math.PI / 180f));
+        Tank stank = GlobalEnvironment.tanks.get(GlobalEnvironment.selfTankId);
+        if(stank!=null) {
+            gameCamera.setTarget(stank.getX(), GlobalEnvironment.TANK_RADIUS, stank.getY());
+            gameCamera.setAlpha((float) ((stank.getHeadDirection()+180f) * Math.PI / 180f));
+        }
+
+        //Pass Terrain
+        terrain.draw(Pass.TERRAIN);
+        Renderer.getInstance().getPipelines().allFlush();
+
+        //Pass Shadow
+        for(ModelBlock modelBlock : obstacles)
+            modelBlock.draw(Pass.SHADOW);
+
+        for(Tank tank : GlobalEnvironment.tanks.values()) {
+            setTankModelMatrix(tank);
+
+            tankModel.draw(Pass.SHADOW);
+        }
+
+        GLES20.glDisable(GLES20.GL_DEPTH_TEST);
+        Renderer.getInstance().getPipelines().allFlush();
+        GLES20.glEnable(GLES20.GL_DEPTH_TEST);
+
+        //Pass Tank
+        for(ModelBlock modelBlock : obstacles)
+            modelBlock.draw(Pass.TANK);
+
+        for(Tank tank : GlobalEnvironment.tanks.values()) {
+            setTankModelMatrix(tank);
+
+            tankModel.draw(Pass.TANK);
+
+
+            //TODO delete this line
+            tank.setHeadDirection(tank.getHeadDirection() + 0.3f);
         }
 
         Renderer.getInstance().getPipelines().allFlush();
 
-
+        //IO Pass
         GLES20.glClear(GLES20.GL_DEPTH_BITS);
         Renderer.getInstance().useIoCamera();
         io.draw();
         Renderer.getInstance().getPipelines().allFlush();
+    }
+
+    private void setTankModelMatrix(Tank tank) {
+        float[] matrixWorld = tankModel.matrixWorld;
+        float x = tank.getX(), y = tank.getY();
+
+        Matrix.setIdentityM(matrixWorld, 0);
+
+        Matrix.translateM(matrixWorld, 0, x,0,y);
+        Matrix.scaleM(matrixWorld, 0, GlobalEnvironment.TANK_RADIUS/2,GlobalEnvironment.TANK_RADIUS/2,GlobalEnvironment.TANK_RADIUS/2);
+        Matrix.translateM(matrixWorld, 0, 0,1,0);
+        Matrix.rotateM(matrixWorld, 0, -tank.getHeadDirection() - 90, 0,1,0); // -90 to adjust model<>game data definition difference.
     }
 }

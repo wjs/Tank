@@ -37,7 +37,7 @@ public class Button implements Component {
         Matrix.setIdentityM(currentMesh.matrixWorld, 0);
         Matrix.translateM(currentMesh.matrixWorld, 0, position.x, position.y, 0);
         Matrix.scaleM(currentMesh.matrixWorld, 0, width_d2, height_d2, 1);
-        currentMesh.draw(Pass.DRAW);
+        currentMesh.draw(Pass.TERRAIN);
     }
 
     @Override

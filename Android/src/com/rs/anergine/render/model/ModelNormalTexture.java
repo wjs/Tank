@@ -3,7 +3,7 @@ package com.rs.anergine.render.model;
 import android.opengl.GLES20;
 
 import com.rs.anergine.render.Renderer;
-import com.rs.anergine.render.mesh.MeshTexture;
+import com.rs.anergine.render.mesh.MeshNormalTexture;
 import com.rs.anergine.render.pass.Pass;
 import com.rs.anergine.render.pipeline.Pipeline;
 import com.rs.anergine.render.util.Util;
@@ -14,26 +14,31 @@ import java.nio.ShortBuffer;
 import java.util.Scanner;
 
 //Model is a mesh with indices & texture.
-public class ModelTexture extends Model {
+public class ModelNormalTexture extends Model {
     protected FloatBuffer verticesBuffer;
+    protected FloatBuffer normalBuffer;
     protected FloatBuffer texcoordBuffer;
     protected ShortBuffer indicesBuffer;
     protected int indicesNumber;
     protected int texture;
-    protected MeshTexture meshTexture;
-	
+    protected MeshNormalTexture meshNormalTexture;
+
 	//give file id to make a mesh
-	public ModelTexture(int meshFileNumber, int textureId) {
+	public ModelNormalTexture(int meshFileNumber, int textureId) {
 		InputStream inputStream = Renderer.getInstance().getContext().getResources().openRawResource(meshFileNumber);
 		Scanner input = new Scanner(inputStream);
 
         int verticesNumber = Integer.parseInt(input.next());
 		float[] vertices = new float[verticesNumber *3];
+        float[] normal = new float[verticesNumber *3];
 		float[] texcoord = new float[verticesNumber *2];
 		for(int i=0; i!= verticesNumber; i++) {
-			vertices[i*3  ] = Float.parseFloat(input.next());
-			vertices[i*3+1] = Float.parseFloat(input.next());
-			vertices[i*3+2] = Float.parseFloat(input.next());
+            vertices[i*3  ] = Float.parseFloat(input.next());
+            vertices[i*3+1] = Float.parseFloat(input.next());
+            vertices[i*3+2] = Float.parseFloat(input.next());
+            normal[i*3  ] = Float.parseFloat(input.next());
+            normal[i*3+1] = Float.parseFloat(input.next());
+            normal[i*3+2] = Float.parseFloat(input.next());
 			texcoord[i*2  ] = Float.parseFloat(input.next());
 			texcoord[i*2+1] = Float.parseFloat(input.next());
 		}
@@ -46,12 +51,13 @@ public class ModelTexture extends Model {
 
 		//will change to id based resource management system
 		verticesBuffer = Util.getFloatBuffer(vertices);
+        normalBuffer = Util.getFloatBuffer(normal);
 		texcoordBuffer = Util.getFloatBuffer(texcoord);
 		indicesBuffer = Util.getShortBuffer(indices);
 		texture = Util.getTexture(textureId);
 
-        meshTexture = new MeshTexture(
-                matrixWorld, verticesBuffer, texcoordBuffer, texture, indicesBuffer, indicesNumber, GLES20.GL_TRIANGLES
+        meshNormalTexture = new MeshNormalTexture(
+                matrixWorld, verticesBuffer, normalBuffer, texcoordBuffer, texture, indicesBuffer, indicesNumber, GLES20.GL_TRIANGLES
         );
 
         setPasses();
@@ -64,6 +70,6 @@ public class ModelTexture extends Model {
 
     @Override
     public void setPasses() {
-        setPass(Pass.TERRAIN, Pipeline.TEXTURE, meshTexture);
+        setPass(Pass.TERRAIN, Pipeline.TEXTURE, meshNormalTexture);
     }
 }

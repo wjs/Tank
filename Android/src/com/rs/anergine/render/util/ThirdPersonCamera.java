@@ -24,14 +24,12 @@ public class ThirdPersonCamera {
     }
 
     private float[] matrixVP = new float[16];
+    private float[] matrixV = new float[16];
+    private float[] matrixP = new float[16];
 
-    public void setMatrixVP(float[] newVP) {
-        matrixVP = newVP;
-    }
-
-    public float[] getMatrixVP() {
-        return matrixVP;
-    }
+    public float[] getMatrixVP() { return matrixVP; }
+    public float[] getMatrixV() { return matrixV; }
+    public float[] getMatrixP() { return matrixP; }
 
     private float tx, ty, tz, minX, maxX, minY, maxY, minZ, maxZ;
     private float alpha = 0, beta = 0;
@@ -173,8 +171,6 @@ public class ThirdPersonCamera {
     public void action() {
         checkAngles();
 
-        float[] matrixV = new float[16];
-        float[] matrixP = new float[16];
         Matrix.perspectiveM(matrixP, 0, fovy, aspect, zNear, zFar);
 
         direction = calcEyeDirection();

@@ -56,8 +56,8 @@ public class WelcomeActivity extends Activity {
 		});
 
         //TODO delete these lines
-//        initGlobalEnvironment();
-//        startActivity(new Intent(WelcomeActivity.this, BattleActivity.class));
+        initGlobalEnvironment();
+        startActivity(new Intent(WelcomeActivity.this, BattleActivity.class));
 	}
 
 	private void initGlobalEnvironment() {

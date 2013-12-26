@@ -12,6 +12,6 @@ public class MCColor implements MeshComponent {
     }
 
     public void set() {
-        GLES20.glUniform3fv(Pipeline.COLOR_ULOCATION, 1, color, 0);
+        GLES20.glUniform4fv(Pipeline.COLOR_ULOCATION, 1, color, 0);
     }
 }

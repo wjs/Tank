@@ -13,10 +13,10 @@ public class MCMatrixWorld implements MeshComponent {
         this.matrixWorld = matrixWorld;
     }
 
-    private static float[] matrixWVP = new float[16];
+    private static float[] matrixMVP = new float[16];
     @Override
     public void set() {
-        Matrix.multiplyMM(matrixWVP, 0, Renderer.getInstance().getCamera().getMatrixVP(), 0, matrixWorld, 0);
-        GLES20.glUniformMatrix4fv(Pipeline.MATRIXMVP_ULOCATION, 1, false, matrixWVP, 0);
+        Matrix.multiplyMM(matrixMVP, 0, Renderer.getInstance().getCamera().getMatrixVP(), 0, matrixWorld, 0);
+        GLES20.glUniformMatrix4fv(Pipeline.MATRIXMVP_ULOCATION, 1, false, matrixMVP, 0);
     }
 }
