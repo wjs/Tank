@@ -155,8 +155,8 @@ public class UIOperationImpl implements UIOperation {
 	 */
 	private int[] getSlotIdByPoint(Point p) {
 		int[] slotId = new int[2];
-		slotId[0] = p.getX() / GlobalEnvironment.HORIZONTAL_SLOT_SIZE;
-		slotId[1] = p.getY() / GlobalEnvironment.VERTICAL_SLOT_SIZE;
+		slotId[0] = (int) (p.getX() / GlobalEnvironment.HORIZONTAL_SLOT_SIZE);
+		slotId[1] = (int) (p.getY() / GlobalEnvironment.VERTICAL_SLOT_SIZE);
 		return slotId;
 	}
 
@@ -169,10 +169,10 @@ public class UIOperationImpl implements UIOperation {
 	private boolean isSafePoint(Point endPoint, int[] endPointSlotId) {
 		int x1, x2, y1, y2;
 		for (Obstacle o : GlobalEnvironment.slot_table.get(intArray2String(endPointSlotId))) {
-			x1 = o.getTopLeft().getX();
-			y1 = o.getTopLeft().getY();
-			x2 = o.getBottomRight().getX();
-			y2 = o.getBottomRight().getY();
+			x1 = (int) o.getTopLeft().getX();
+			y1 = (int) o.getTopLeft().getY();
+			x2 = (int) o.getBottomRight().getX();
+			y2 = (int) o.getBottomRight().getY();
 			if (endPoint.getX() >= x1 && endPoint.getX() <= x2 && endPoint.getY() >= y1 && endPoint.getY() <= y2) {
 				return false;
 			}
@@ -250,10 +250,10 @@ public class UIOperationImpl implements UIOperation {
 	 */
 	private Point[] getCrossPoint(Point start, Point end, Point p1, Point p2) {
 		double k = (start.getY() - end.getY()) / (start.getX() - end.getX());
-		int x1 = p1.getX();
-		int y1 = p1.getY();
-		int x2 = p2.getX();
-		int y2 = p2.getY();
+		int x1 = (int) p1.getX();
+		int y1 = (int) p1.getY();
+		int x2 = (int) p2.getX();
+		int y2 = (int) p2.getY();
 		// obstacle的水平的边
 		if (y1 == y2) {
 			int cx = (int) (y1 / k);
@@ -297,10 +297,10 @@ public class UIOperationImpl implements UIOperation {
 	 */
 	private Point[] getClosePoint(Point start, ArrayList<Point[]> crossPoints) {
 		Point[] precise_collision = crossPoints.get(0);
-		int minLength = Math.abs(start.getX() - precise_collision[1].getX());
+		int minLength = (int) Math.abs(start.getX() - precise_collision[1].getX());
 		for (int i = 1; i < crossPoints.size(); i++) {
 			// 此时的pp长度应该是3，里面是有三个点的，因为垂直或水平撞的时候不可能有多个交叉点
-			int tmpLength = Math.abs(start.getX() - crossPoints.get(i)[1].getX());
+			int tmpLength = (int) Math.abs(start.getX() - crossPoints.get(i)[1].getX());
 			if (tmpLength < minLength) {
 				minLength = tmpLength;
 				precise_collision = crossPoints.get(i);
@@ -362,10 +362,10 @@ public class UIOperationImpl implements UIOperation {
 			// 遍历slotsWaitForSearch中每一个分区的所有障碍物，判断其与shotLine的交点
 			for(int[] slotId : slotsWaitForSearch) {
 				for(Obstacle o : GlobalEnvironment.slot_table.get(intArray2String(slotId))) {
-					x1 = o.getTopLeft().getX();
-					y1 = o.getTopLeft().getY();
-					x2 = o.getBottomRight().getX();
-					y2 = o.getBottomRight().getY();
+					x1 = (int) o.getTopLeft().getX();
+					y1 = (int) o.getTopLeft().getY();
+					x2 = (int) o.getBottomRight().getX();
+					y2 = (int) o.getBottomRight().getY();
 					if (startPoint.getY() == endPoint.getY()) {
 						// 水平的炮弹
 						if(!((y1 < startPoint.getY() && y2 < startPoint.getY()) || (y1 > startPoint.getY() && y2 > startPoint.getY())))	{

@@ -63,7 +63,7 @@ public class GameRenderer implements com.rs.anergine.GameRenderer {
                 powerState = false;
             }
         };
-        cs.add(new ToggleButton(new Position(0.2f, -0.8f, Position.PositionType.LEFT), 0.2f, 0.2f, powerListener, R.drawable.button_up, R.drawable.button_down));
+        cs.add(new ToggleButton(new Position(0.3f, -0.7f, Position.PositionType.LEFT), 0.4f, 0.4f, powerListener, R.drawable.button_up, R.drawable.button_down));
 
         ButtonListener fireListener = new ButtonListener() {
             @Override
@@ -74,7 +74,7 @@ public class GameRenderer implements com.rs.anergine.GameRenderer {
                 fire = true;
             }
         };
-        cs.add(new Button(new Position(-0.2f, -0.8f, Position.PositionType.RIGHT), 0.2f, 0.2f, fireListener, R.drawable.button_up, R.drawable.button_down));
+        cs.add(new Button(new Position(-0.3f, -0.7f, Position.PositionType.RIGHT), 0.4f, 0.4f, fireListener, R.drawable.button_up, R.drawable.button_down));
 
         io.setComponentSet(cs);
 
@@ -106,14 +106,14 @@ public class GameRenderer implements com.rs.anergine.GameRenderer {
     public void onChangeSetCamera() {
         Renderer.getInstance().useGameCamera();
         gameCamera = Renderer.getInstance().getCamera();
-        gameCamera.setDistance(1000);
+        gameCamera.setDistance(400);
         gameCamera.setTarget(1000, 0, 1000);
         gameCamera.setUp(0, 1, 0);
         gameCamera.setFovy(45f);
         gameCamera.setZFar(10000f);
         gameCamera.setZNear(1f);
         gameCamera.setAlpha((float) (Math.PI *5/4f));
-        gameCamera.setBeta(0.2f);
+        gameCamera.setBeta(0.1f);
 
         Renderer.getInstance().useIoCamera();
         ThirdPersonCamera ioCamera = Renderer.getInstance().getCamera();
@@ -129,11 +129,10 @@ public class GameRenderer implements com.rs.anergine.GameRenderer {
     @Override
     public void render() {
         float[] gravity = io.getGravity();
-        float v = (float) (gravity[1]/10* Math.PI / 6 /1000);
+        float v = (float) (gravity[1]/10* Math.PI / 6 /60);
 
         //TODO enable this line and start debugging!
 //        uiOperation.tankMove(powerState ? 1000f : -500f, v, fire);
-        fire = false;
 
         Renderer.getInstance().useGameCamera();
 
@@ -143,8 +142,28 @@ public class GameRenderer implements com.rs.anergine.GameRenderer {
 
         Tank stank = GlobalEnvironment.tanks.get(GlobalEnvironment.selfTankId);
         if(stank!=null) {
-            gameCamera.setTarget(stank.getX(), GlobalEnvironment.TANK_RADIUS, stank.getY());
-            gameCamera.setAlpha((float) ((stank.getHeadDirection()+180f) * Math.PI / 180f));
+
+            //-----------------------
+            //TODO delete these lines
+            stank.setHeadDirection((float) (stank.getHeadDirection() + v*180f/Math.PI));
+            double alpha = Math.toRadians(stank.getHeadDirection());
+            double dx = -Math.cos(alpha)*2, dy = -Math.sin(alpha)*2;
+            if(powerState) {
+                dx = -0.5*dx;
+                dy = -0.5*dy;
+            }
+            stank.setX((float) (stank.getX()+dx));
+            stank.setY((float) (stank.getY()+dy));
+
+            System.out.println("Renderer "+dx +" "+ dy + " "+alpha+ " "+v*180f/Math.PI);
+            //-----------------------
+
+            gameCamera.setTarget(stank.getX(), 100, stank.getY());
+            gameCamera.setAlpha((float) (stank.getHeadDirection() * Math.PI / 180f));
+
+            if(stank.getBeShooted()!=0 || fire) { //TODO delete "|| fire"
+                io.vibrate(100);
+            }
         }
 
         //Pass Terrain
@@ -173,10 +192,6 @@ public class GameRenderer implements com.rs.anergine.GameRenderer {
             setTankModelMatrix(tank);
 
             tankModel.draw(Pass.TANK);
-
-
-            //TODO delete this line
-            tank.setHeadDirection(tank.getHeadDirection() + 0.3f);
         }
 
         Renderer.getInstance().getPipelines().allFlush();
@@ -186,6 +201,9 @@ public class GameRenderer implements com.rs.anergine.GameRenderer {
         Renderer.getInstance().useIoCamera();
         io.draw();
         Renderer.getInstance().getPipelines().allFlush();
+
+
+        fire = false;
     }
 
     private void setTankModelMatrix(Tank tank) {
@@ -197,6 +215,6 @@ public class GameRenderer implements com.rs.anergine.GameRenderer {
         Matrix.translateM(matrixWorld, 0, x,0,y);
         Matrix.scaleM(matrixWorld, 0, GlobalEnvironment.TANK_RADIUS/2,GlobalEnvironment.TANK_RADIUS/2,GlobalEnvironment.TANK_RADIUS/2);
         Matrix.translateM(matrixWorld, 0, 0,1,0);
-        Matrix.rotateM(matrixWorld, 0, -tank.getHeadDirection() - 90, 0,1,0); // -90 to adjust model<>game data definition difference.
+        Matrix.rotateM(matrixWorld, 0, -tank.getHeadDirection() + 90, 0,1,0); // -90 to adjust model<>game data definition difference.
     }
 }

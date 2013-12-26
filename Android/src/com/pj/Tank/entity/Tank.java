@@ -12,8 +12,8 @@ import java.io.Serializable;
 public class Tank implements Serializable {
 	private int id; // 坦克的ID，由下面的name.hashCode()得到
 	private String name;	// 玩家一开始手动输入名字
-	private int x;	// 坦克中心点的X坐标
-	private int y;	// 坦克中心点的Y坐标
+	private float x;	// 坦克中心点的X坐标
+	private float y;	// 坦克中心点的Y坐标
 	private float runSpeed;	// 速度的值，以像素/秒为单位，正值代表每秒往前指定像素值，负值代表每秒往后制定像素值，0为停止。速度最好不超过300px/s,建议此值不要超过（地图长度/10s）。
 	private float runAcceleration;	// 运动加速度，正值为往前的加速度，负值为往后的加速度。
 	private float headDirection;	// 坦克头的朝向，范围是0-360度，水平往右为0度，逆时针方向增大。
@@ -42,19 +42,19 @@ public class Tank implements Serializable {
 		this.name = name;
 	}
 
-	public int getX() {
+	public float getX() {
 		return x;
 	}
 
-	public void setX(int x) {
+	public void setX(float x) {
 		this.x = x;
 	}
 
-	public int getY() {
+	public float getY() {
 		return y;
 	}
 
-	public void setY(int y) {
+	public void setY(float y) {
 		this.y = y;
 	}
 
