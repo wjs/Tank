@@ -174,15 +174,15 @@ public class GameRenderer implements com.rs.anergine.GameRenderer {
             modelBlock.draw(Pass.SHADOW);
         }
 
+        GLES20.glDisable(GLES20.GL_DEPTH_TEST);
         for(Tank tank : GlobalEnvironment.tanks.values()) {
             setTankModelMatrix(tank);
 
             tankModel.draw(Pass.SHADOW);
+            Renderer.getInstance().getPipelines().allFlush();
         }
-
-        GLES20.glDisable(GLES20.GL_DEPTH_TEST);
-        Renderer.getInstance().getPipelines().allFlush();
         GLES20.glEnable(GLES20.GL_DEPTH_TEST);
+
 
         //Pass Tank
         for(ModelBlock modelBlock : obstacles) {
@@ -201,6 +201,7 @@ public class GameRenderer implements com.rs.anergine.GameRenderer {
             setTankModelMatrix(tank);
 
             tankModel.draw(Pass.TANK);
+            Renderer.getInstance().getPipelines().allFlush();
         }
 
 

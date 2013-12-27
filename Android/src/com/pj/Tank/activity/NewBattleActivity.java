@@ -94,6 +94,32 @@ public class NewBattleActivity extends Activity {
 			GlobalEnvironment.selfTankId = tank.getId();
 			GlobalEnvironment.tanks.put(tank.getId(), tank);
 
+            Tank tank2 = new Tank();
+            int randomStartPoint2 = (int) Math.random() * GlobalEnvironment.gameMap.getStartPoints().size();
+            tank2.setX(1050);
+            tank2.setY(1000);
+            tank2.setRunSpeed(0);
+            tank2.setRunAcceleration(0);
+            // 坦克初始朝向这样写比较bug，我是根据地图拿四个点来确定的
+            switch (randomStartPoint2) {
+            case 0: tank2.setHeadDirection(90); break;
+            case 1: tank2.setHeadDirection(180); break;
+            case 2: tank2.setHeadDirection(0); break;
+            default: tank2.setHeadDirection(270); break;
+            }
+            tank2.setWheelSpeed(0);
+            tank2.setBombList(new int[]{0});
+            tank2.setCurrentBomb(0);
+            tank2.setLastShootTime(System.currentTimeMillis());
+            tank2.setShooting(false);
+            tank2.setBeShooted(0);
+            tank2.setHP(100);
+            tank2.setM(1000);
+            tank2.setName("玩家B");
+            tank2.setId(tank2.getName().hashCode());
+//            GlobalEnvironment.selfTankId = tank.getId();
+            GlobalEnvironment.tanks.put(tank2.getId(), tank2);
+
 		}catch(Exception e){
 			e.printStackTrace();
 		}
