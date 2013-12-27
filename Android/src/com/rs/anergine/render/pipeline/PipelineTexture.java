@@ -21,7 +21,9 @@ public class PipelineTexture extends Pipeline {
                     "uniform sampler2D uTexture;" +
                     "varying vec2 vTexcoord;" +
                     "void main() {" +
-                    "  gl_FragColor = texture2D(uTexture, vTexcoord);" +
+                    "  vec4 color = texture2D(uTexture, vTexcoord);" +
+                    "  if(length(color.rgb) > 1.7) color.a = 0.0;" +
+                    "  gl_FragColor = color;" +
                     "}";
 
     public PipelineTexture() {

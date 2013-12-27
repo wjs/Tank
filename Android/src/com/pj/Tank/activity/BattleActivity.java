@@ -26,6 +26,7 @@ public class BattleActivity extends Activity {
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+        instance = this;
 
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -56,5 +57,11 @@ public class BattleActivity extends Activity {
         super.onResume();
         if(view!=null) view.onResume();
         if(io!=null) io.activateAccelerator();
+    }
+
+    public static BattleActivity instance;
+
+    public void exit() {
+        finish();
     }
 }

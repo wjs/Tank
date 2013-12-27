@@ -4,7 +4,6 @@ import com.rs.anergine.render.pipelineComponent.PCAcceleration;
 import com.rs.anergine.render.pipelineComponent.PCColor;
 import com.rs.anergine.render.pipelineComponent.PCMatrixMVP;
 import com.rs.anergine.render.pipelineComponent.PCPointSize;
-import com.rs.anergine.render.pipelineComponent.PCTexture;
 import com.rs.anergine.render.pipelineComponent.PCTime;
 
 public class PipelineParticle extends Pipeline {
@@ -20,6 +19,7 @@ public class PipelineParticle extends Pipeline {
                     "void main() {" +
                     "  vec3 pos = aPosition.xyz;" +
                     "  pos += uAcceleration * uTime * uTime * 0.5 + aVelocity.xyz * uTime;" +
+                    "  if(pos.y < 0.0) pos.y = 0.0;" +
                     "  gl_Position = uMatrixMVP * vec4(pos, 1.0);" +
                     "  gl_PointSize = uPointSize;" +
                     "}";
@@ -42,7 +42,6 @@ public class PipelineParticle extends Pipeline {
         new PCMatrixMVP(this);
         new PCColor(this);
         new PCPointSize(this);
-        new PCTexture(this);
 
         super.init(vertexShaderCode, fragmentShaderCode);
     }

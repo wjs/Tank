@@ -15,6 +15,7 @@ public class View extends GLSurfaceView {
         super(context);
         this.io = io;
         setEGLContextClientVersion(2);
+        setEGLConfigChooser(8, 8, 8, 8, 16, 8);
 
         setRenderer(new com.rs.anergine.render.Renderer(this.getContext(), gameRenderer));
 
