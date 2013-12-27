@@ -1,32 +1,17 @@
 package com.pj.Tank.render;
 
-import android.opengl.GLES20;
-import android.opengl.Matrix;
+public class ModelTank {
 
-import com.rs.anergine.render.mesh.MeshColor;
-import com.rs.anergine.render.model.ModelNormalCube;
-import com.rs.anergine.render.pass.Pass;
-import com.rs.anergine.render.pipeline.Pipeline;
+    public ModelTankComponent base;
+    public ModelTankComponent turret;
 
-public class ModelTank extends ModelNormalCube {
-
-    protected float[] matrixWorldShadow;
-
-    public ModelTank(int texture) {
-        super(texture);
+    public ModelTank() {
+        base = new ModelTankComponent();
+        turret = new ModelTankComponent();
     }
 
-    @Override
-    public void prepare() {
-        Matrix.multiplyMM(matrixWorldShadow, 0, GameRenderer.matrixShadow, 0, matrixWorld, 0);
-    }
-
-    @Override
-    public void setPasses() {
-        setPass(Pass.TANK, Pipeline.LIGHTTEXTURE, meshNormalTexture);
-        matrixWorldShadow = new float[16];
-        setPass(Pass.SHADOW, Pipeline.COLOR, new MeshColor(
-                matrixWorldShadow, verticesBuffer, GameRenderer.SHADOW_COLOR, indicesBuffer, indicesNumber, GLES20.GL_TRIANGLES
-        ));
+    public void draw(int pass) {
+        base.draw(pass);
+        turret.draw(pass);
     }
 }

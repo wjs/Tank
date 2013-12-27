@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
+import android.util.SparseIntArray;
 
 import com.rs.anergine.render.Renderer;
 
@@ -14,7 +15,16 @@ import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
 public class Util {
+
+    private static SparseIntArray textureSet = new SparseIntArray();
+    public static void clearTextureSet() {
+        textureSet.clear();
+    }
     public static int getTexture(int resourceId) {
+        int r;
+        if((r = textureSet.get(resourceId, -1)) != -1) {
+            return r;
+        }
         InputStream inputStream = Renderer.getInstance().getContext().getResources().openRawResource(resourceId);
         Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
 

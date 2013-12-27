@@ -7,6 +7,7 @@ import com.rs.anergine.GameRenderer;
 import com.rs.anergine.io.Position;
 import com.rs.anergine.render.pass.PipelineSet;
 import com.rs.anergine.render.util.ThirdPersonCamera;
+import com.rs.anergine.render.util.Util;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -60,6 +61,7 @@ public class Renderer implements android.opengl.GLSurfaceView.Renderer {
 
         pipelines = new PipelineSet();
 
+        Util.clearTextureSet();
         gameRenderer.load();
     }
 

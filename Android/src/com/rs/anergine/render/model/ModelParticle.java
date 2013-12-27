@@ -29,7 +29,7 @@ public class ModelParticle extends Model {
     private boolean finished = false;
 
     //give file id to make a mesh
-	public ModelParticle(int particleCount, float[] center, float[] baseVelocity, float velocityLength, float[] acceleration, long duration, float[] color) {
+	public ModelParticle(int particleCount, float[] center, float[] baseVelocity, float velocityLength, float[] acceleration, long duration, float[] color, float pointSize) {
         this.particleCount = particleCount;
         this.center = center;
         this.duration = duration;
@@ -47,15 +47,25 @@ public class ModelParticle extends Model {
             position[i*3+1] = center[1];
             position[i*3+2] = center[2];
 
-            velocity[i*3  ] = (r.nextFloat()*2-1) * velocityLength + baseVelocity[0];
-            velocity[i*3+1] = (r.nextFloat()*2-1) * velocityLength + baseVelocity[1];
-            velocity[i*3+2] = (r.nextFloat()*2-1) * velocityLength + baseVelocity[2];
+            float vx = (r.nextFloat()*2-1);
+            float vy = (r.nextFloat()*2-1);
+            float vz = (r.nextFloat()*2-1);
+            float vl;
+            if((vl = vx * vx + vy * vy + vz * vz) > 1) {
+                float nvl = (float) (1 / Math.sqrt(vl));
+                vx *= nvl;
+                vy *= nvl;
+                vz *= nvl;
+            }
+            velocity[i*3  ] = vx * velocityLength + baseVelocity[0];
+            velocity[i*3+1] = vy * velocityLength + baseVelocity[1];
+            velocity[i*3+2] = vz * velocityLength + baseVelocity[2];
         }
 
         positionBuffer = Util.getFloatBuffer(position);
         velocityBuffer = Util.getFloatBuffer(velocity);
 
-        meshParticle = new MeshParticle(matrixWorld, positionBuffer, velocityBuffer, acceleration, time, color, particleCount, GLES20.GL_POINTS);
+        meshParticle = new MeshParticle(matrixWorld, positionBuffer, velocityBuffer, acceleration, time, color, pointSize, particleCount, GLES20.GL_POINTS);
 
         setPasses();
 	}

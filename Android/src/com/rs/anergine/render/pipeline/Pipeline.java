@@ -28,6 +28,7 @@ public abstract class Pipeline {
     public static int LIGHTDIRECTION_ULOCATION = -1;
     public static int ACCELERATION_ULOCATION = -1;
     public static int TIME_ULOCATION = -1;
+    public static int POINTSIZE_ULOCATION = -1;
 
 
     private static int alocationPointer = 0;
