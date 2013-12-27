@@ -5,6 +5,7 @@ import com.rs.anergine.render.pipeline.Pipeline;
 import com.rs.anergine.render.pipeline.PipelineColor;
 import com.rs.anergine.render.pipeline.PipelineColorBuffer;
 import com.rs.anergine.render.pipeline.PipelineLightTexture;
+import com.rs.anergine.render.pipeline.PipelineParticle;
 import com.rs.anergine.render.pipeline.PipelineTexture;
 
 public class PipelineSet {
@@ -15,6 +16,7 @@ public class PipelineSet {
         pipelines[Pipeline.COLOR_BUFFER] = new PipelineColorBuffer();
         pipelines[Pipeline.TEXTURE] = new PipelineTexture();
         pipelines[Pipeline.LIGHTTEXTURE] = new PipelineLightTexture();
+        pipelines[Pipeline.PARTICLE] = new PipelineParticle();
     }
 
     public void allFlush() {

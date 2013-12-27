@@ -26,6 +26,7 @@ public abstract class Model {
 
     public final void draw(int pass) {
         prepare();
-        Renderer.getInstance().getPipelines().addMesh(pipelineList[pass], meshList[pass]);
+        if(meshList[pass]!=null)
+            Renderer.getInstance().getPipelines().addMesh(pipelineList[pass], meshList[pass]);
     }
 }

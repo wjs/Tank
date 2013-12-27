@@ -15,17 +15,19 @@ public abstract class Pipeline {
     public final static int COLOR_BUFFER = pipelinePointer++;
     public final static int TEXTURE = pipelinePointer++;
     public final static int LIGHTTEXTURE = pipelinePointer++;
+    public final static int PARTICLE = pipelinePointer++;
 
     public final static int PIPELINE_COUNT = pipelinePointer;
 
 
     public static int MATRIXMVP_ULOCATION = -1;
-    public static int MATRIXLIGHTNORMAL_ULOCATION = -1;
     public static int MATRIXNORMAL_ULOCATION = -1;
     public static int TEXTURE_ULOCATION = -1;
     public static int COLOR_ULOCATION = -1;
     public static int LIGHTCOLOR_ULOCATION = -1;
     public static int LIGHTDIRECTION_ULOCATION = -1;
+    public static int ACCELERATION_ULOCATION = -1;
+    public static int TIME_ULOCATION = -1;
 
 
     private static int alocationPointer = 0;
@@ -33,10 +35,12 @@ public abstract class Pipeline {
     public final static int NORMALBUFFER_ALOCATION = alocationPointer++;
     public final static int COLORBUFFER_ALOCATION = alocationPointer++;
     public final static int TEXCOORDBUFFER_ALOCATION = alocationPointer++;
+    public final static int VELOCITY_ALOCATION = alocationPointer++;
     public final static String POSITIONBUFFER_NAME = "aPosition";
     public final static String NORMALBUFFER_NAME = "aNormal";
     public final static String COLORBUFFER_NAME = "aColor";
     public final static String TEXCOORDBUFFER_NAME = "aTexcoord";
+    public final static String VELOCITY_NAME = "aVelocity";
 
 
     //loaded program
@@ -84,6 +88,7 @@ public abstract class Pipeline {
         GLES20.glBindAttribLocation(program, NORMALBUFFER_ALOCATION, NORMALBUFFER_NAME);
         GLES20.glBindAttribLocation(program, COLORBUFFER_ALOCATION, COLORBUFFER_NAME);
         GLES20.glBindAttribLocation(program, TEXCOORDBUFFER_ALOCATION, TEXCOORDBUFFER_NAME);
+        GLES20.glBindAttribLocation(program, VELOCITY_ALOCATION, VELOCITY_NAME);
 
         GLES20.glLinkProgram(program);
         int[] linkStatus = new int[1];
@@ -118,6 +123,7 @@ public abstract class Pipeline {
         GLES20.glEnableVertexAttribArray(Pipeline.NORMALBUFFER_ALOCATION);
         GLES20.glEnableVertexAttribArray(Pipeline.COLORBUFFER_ALOCATION);
         GLES20.glEnableVertexAttribArray(Pipeline.TEXCOORDBUFFER_ALOCATION);
+        GLES20.glEnableVertexAttribArray(Pipeline.VELOCITY_ALOCATION);
 
         for(PipelineComponent component : componentList) {
             component.set();

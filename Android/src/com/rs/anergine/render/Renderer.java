@@ -24,6 +24,12 @@ public class Renderer implements android.opengl.GLSurfaceView.Renderer {
     private PipelineSet pipelines;
     public PipelineSet getPipelines() { return pipelines; }
 
+    //Time
+    private long frameStartTime = -1;
+    private long frameDeltaTime;
+    public long getFrameStartTime() { return frameStartTime; }
+    public long getFrameDeltaTime() { return frameDeltaTime; }
+
     //Camera
     private ThirdPersonCamera gameCamera = new ThirdPersonCamera();
     public void useGameCamera() { camera = gameCamera; camera.action(); }
@@ -73,7 +79,17 @@ public class Renderer implements android.opengl.GLSurfaceView.Renderer {
     public void onDrawFrame(GL10 gl) {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 
+        long time = System.currentTimeMillis();
+        if(frameStartTime == -1) {
+            frameDeltaTime = 0;
+        } else {
+            frameDeltaTime = time - frameStartTime;
+        }
+        frameStartTime = time;
+
         gameRenderer.render();
+
+        System.out.println("Renderer frame time = " + (System.currentTimeMillis() - frameStartTime) + "ms");
     }
 
 
